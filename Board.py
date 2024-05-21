@@ -41,17 +41,16 @@ class Board:
         # Display the initial board for debugging
         self.print_board()      
 
+    def algebraic_to_index(self, algebraic: str) -> int:
+        file = ord(algebraic[0]) - ord('a')
+        rank = int(algebraic[1]) - 1
+        return rank * 8 + file
+    
     def setup_from_FEN(self, fen: str) -> None:
-
-        def algebraic_to_index(algebraic: str) -> int:
-            file = ord(algebraic[0]) - ord('a')
-            rank = int(algebraic[1]) - 1
-            return rank * 8 + file
-
         "r4rk1/pb1pnppp/n1p1pq2/1p4B1/1b1P1P2/2PQ3N/PP1NP1PP/2KR1B1R w - - 0 1"
         self.active_color = 'white' if fen.split(' ')[1] == 'w' else 'black'
         self.castling_rights = fen.split(' ')[2]
-        self.en_passant_square = algebraic_to_index(fen.split(' ')[3])
+        self.en_passant_square = self.algebraic_to_index(fen.split(' ')[3])
         self.num_halfmoves = int(fen.split(' ')[4])
         self.num_fullmoves = int(fen.split(' ')[5])
         fen = fen.split(' ')[0]
@@ -106,6 +105,24 @@ class Board:
 
         # En Passant 
         # TODO: Implement this
+        enpassant_square = self.en_passant_square
+        print(enpassant_square, "enpassant_square")
+        if(enpassant_square == position + 9 and color=='white'):
+            # En passant capture to the right of the pawn by WHITE
+            enpassant_move = Move(self.board[position], color, position, enpassant_square, MoveType.EN_PASSANT)
+            moves.append(enpassant_move)
+        if(enpassant_square == position + 7 and color=='white'):
+            # En passant capture to the left of the pawn by WHITE
+            enpassant_move = Move(self.board[position], color, position, enpassant_square, MoveType.EN_PASSANT)
+            moves.append(enpassant_move)
+        if(enpassant_square == position - 9 and color=='black'):
+            # En passant capture to the right of the pawn by BLACK
+            enpassant_move = Move(self.board[position], color, position, enpassant_square, MoveType.EN_PASSANT)
+            moves.append(enpassant_move)
+        if(enpassant_square == position - 7 and color=='black'):
+            # En passant capture to the left of the pawn by BLACK
+            enpassant_move = Move(self.board[position], color, position, enpassant_square, MoveType.EN_PASSANT)
+            moves.append(enpassant_move)
 
         return moves
     
@@ -123,4 +140,5 @@ class Board:
 board = Board()
 board.setup_from_FEN("r4rk1/pb1pnppp/n3pq2/1ppP2B1/1b3P2/2PQ3N/PP1NP1PP/2KR1B1R w Kq c6 0 1")
 board.print_board()
-board.generate_moves(35)
+moves = board.generate_moves(35)
+print(moves)

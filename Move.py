@@ -17,3 +17,6 @@ class Move:
         self.start_tile = start_tile
         self.capture_tile = capture_tile
         self.type = move_type
+
+    def __repr__(self) -> str:
+        return f'{self.piece.get_symbol()} {self.start_tile} -> {self.capture_tile} [{self.type.name}]'
