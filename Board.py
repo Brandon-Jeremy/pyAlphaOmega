@@ -85,8 +85,13 @@ class Board:
         print(forward_pos, "forward_pos")
         print(self.board[forward_pos], "self.board[forward_pos]")
         if 0 <= forward_pos < 64 and not self.board[forward_pos]:
-            forward_move = Move(self.board[position], color, position, forward_pos, MoveType.NORMAL)
-            moves.append(forward_move)
+            if forward_pos // 8 == 0 or forward_pos // 8 == 7:
+                # Promotion
+                promotion_move = Move(self.board[position], color, position, forward_pos, MoveType.PROMOTION)
+                moves.append(promotion_move)
+            else:
+                forward_move = Move(self.board[position], color, position, forward_pos, MoveType.NORMAL)
+                moves.append(forward_move)
             
             # Double step forward from starting position
             if position // 8 == start_row:
@@ -103,8 +108,7 @@ class Board:
                     capture_move = Move(self.board[position], color, position, capture_pos, MoveType.CAPTURE)
                     moves.append(capture_move)
 
-        # En Passant 
-        # TODO: Implement this
+        # En Passant
         enpassant_square = self.en_passant_square
         print(enpassant_square, "enpassant_square")
         if(enpassant_square == position + 9 and color=='white'):
@@ -126,6 +130,68 @@ class Board:
 
         return moves
     
+    def generate_rook_moves(self, position, color):
+        moves = []
+        directions = [-8, 8, -1, 1]  # Vertical and horizontal directions
+
+        for direction in directions:
+            current_pos = position
+            while True:
+                current_pos += direction
+                if current_pos < 0 or current_pos >= 64:
+                    break
+                if abs((current_pos % 8) - (position % 8)) > 1 and (direction == -1 or direction == 1):
+                    break
+                if self.board[current_pos]:
+                    if self.board[current_pos].color != color:
+                        move = Move(self.board[position], color, position, current_pos, MoveType.CAPTURE)
+                        moves.append(move)
+                    break
+                move = Move(self.board[position], color, position, current_pos, MoveType.NORMAL)
+                moves.append(move)
+        return moves
+    
+    def generate_knight_moves(self, position, color):
+        moves = []
+        directions = [-17, -15, -10, -6, 6, 10, 15, 17]
+        for direction in directions:
+            current_pos = position + direction
+            if current_pos < 0 or current_pos >= 64:
+                continue
+            if abs((current_pos % 8) - (position % 8)) > 2:
+                continue
+            if self.board[current_pos] and self.board[current_pos].color == color:
+                continue
+            if self.board[current_pos] and self.board[current_pos].color != color:
+                move = Move(self.board[position], color, position, current_pos, MoveType.CAPTURE)
+                moves.append(move)
+            else:
+                move = Move(self.board[position], color, position, current_pos, MoveType.NORMAL)
+                moves.append(move)
+
+        return moves
+    
+    def generate_bishop_moves(self, position, color):
+        moves = []
+        directions = [-9, -7, 7, 9]
+        for direction in directions:
+            current_pos = position
+            while True:
+                current_pos += direction
+                if current_pos < 0 or current_pos >= 64:
+                    break
+                if abs((current_pos % 8) - (position % 8)) > 1:
+                    break
+                if self.board[current_pos]:
+                    if self.board[current_pos].color != color:
+                        move = Move(self.board[position], color, position, current_pos, MoveType.CAPTURE)
+                        moves.append(move)
+                    break
+                move = Move(self.board[position], color, position, current_pos, MoveType.NORMAL)
+                moves.append(move)
+
+        return moves
+
     def generate_moves(self, position):
         piece = self.board[position]
         if not piece:
@@ -135,10 +201,21 @@ class Board:
         if piece.type == 'pawn':
             print("Generating pawn moves")
             return self.generate_pawn_moves(position, piece.color)
-
+        
+        if piece.type == 'knight':
+            print("Generating knight moves")
+            return self.generate_knight_moves(position, piece.color)
+        
+        if piece.type == 'bishop':
+            print("Generating bishop moves")
+            return self.generate_bishop_moves(position, piece.color)
+        
+        if piece.type == 'rook':
+            print("Generating rook moves")
+            return self.generate_rook_moves(position, piece.color)
 
 board = Board()
-board.setup_from_FEN("r4rk1/pb1pnppp/n3pq2/1ppP2B1/1b3P2/2PQ3N/PP1NP1PP/2KR1B1R w Kq c6 0 1")
+board.setup_from_FEN("r4rk1/pb1pnpp1/n3pq2/RppP2Bp/1b3P2/2PQ3N/PPN1P1PP/2K2B1R w Kq c6 0 1")
 board.print_board()
-moves = board.generate_moves(35)
+moves = board.generate_moves(38)
 print(moves)
