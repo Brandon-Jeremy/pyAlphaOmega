@@ -191,7 +191,47 @@ class Board:
                 moves.append(move)
 
         return moves
+    
+    def generate_queen_moves(self, position, color):
+        moves = []
+        directions = [-9, -8, -7, -1, 1, 7, 8, 9]
+        for direction in directions:
+            current_pos = position
+            while True:
+                current_pos += direction
+                if current_pos < 0 or current_pos >= 64:
+                    break
+                if abs((current_pos % 8) - (position % 8)) > 1 and (direction == -1 or direction == 1):
+                    break
+                if self.board[current_pos]:
+                    if self.board[current_pos].color != color:
+                        move = Move(self.board[position], color, position, current_pos, MoveType.CAPTURE)
+                        moves.append(move)
+                    break
+                move = Move(self.board[position], color, position, current_pos, MoveType.NORMAL)
+                moves.append(move)
 
+        return moves
+    
+    def generate_king_moves(self, position, color):
+        moves = []
+        directions = [-9, -8, -7, -1, 1, 7, 8, 9]
+        for direction in directions:
+            current_pos = position + direction
+            if current_pos < 0 or current_pos >= 64:
+                continue
+            if abs((current_pos % 8) - (position % 8)) > 1:
+                continue
+            if self.board[current_pos] and self.board[current_pos].color == color:
+                continue
+            if self.board[current_pos] and self.board[current_pos].color != color:
+                move = Move(self.board[position], color, position, current_pos, MoveType.CAPTURE)
+                moves.append(move)
+            else:
+                move = Move(self.board[position], color, position, current_pos, MoveType.NORMAL)
+                moves.append(move)
+
+        return moves
     def generate_moves(self, position):
         piece = self.board[position]
         if not piece:
@@ -213,6 +253,14 @@ class Board:
         if piece.type == 'rook':
             print("Generating rook moves")
             return self.generate_rook_moves(position, piece.color)
+        
+        if piece.type == 'queen':
+            print("Generating queen moves")
+            return self.generate_queen_moves(position, piece.color)
+        
+        if piece.type == 'king':
+            print("Generating king moves")
+            return self.generate_king_moves(position, piece.color)
 
 board = Board()
 board.setup_from_FEN("r4rk1/pb1pnpp1/n3pq2/RppP2Bp/1b3P2/2PQ3N/PPN1P1PP/2K2B1R w Kq c6 0 1")
