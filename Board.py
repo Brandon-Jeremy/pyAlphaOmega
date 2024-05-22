@@ -12,6 +12,11 @@ class Board:
         self.num_halfmoves = 0
         self.num_fullmoves = 1
 
+        self.move_history = []
+
+    def switch_turn(self):
+        self.active_color = 'black' if self.active_color == 'white' else 'white'
+
     def setup_board(self) -> None:
         for i in range(8,16):
             self.board[i] = Piece('pawn', 'white')
@@ -87,8 +92,10 @@ class Board:
         if 0 <= forward_pos < 64 and not self.board[forward_pos]:
             if forward_pos // 8 == 0 or forward_pos // 8 == 7:
                 # Promotion
-                promotion_move = Move(self.board[position], color, position, forward_pos, MoveType.PROMOTION)
-                moves.append(promotion_move)
+                for i in range(4):
+                    promotion_piece = ['queen', 'rook', 'bishop', 'knight'][i]
+                    promotion_move = Move(self.board[position], color, position, forward_pos, MoveType.PROMOTION, Piece(promotion_piece, color))
+                    moves.append(promotion_move)
             else:
                 forward_move = Move(self.board[position], color, position, forward_pos, MoveType.NORMAL)
                 moves.append(forward_move)
@@ -231,7 +238,53 @@ class Board:
                 move = Move(self.board[position], color, position, current_pos, MoveType.NORMAL)
                 moves.append(move)
 
+        # Castling
+        if color == 'white':
+            if 'K' in self.castling_rights and not self.board[5] and not self.board[6]:
+                move = Move(self.board[position], color, position, position + 2, MoveType.CASTLE, castle_side='K')
+                moves.append(move)
+            if 'Q' in self.castling_rights and not self.board[1] and not self.board[2] and not self.board[3]:
+                move = Move(self.board[position], color, position, position - 2, MoveType.CASTLE, castle_side='Q')
+                moves.append(move)
+
+        if color == 'black':
+            if 'k' in self.castling_rights and not self.board[61] and not self.board[62]:
+                move = Move(self.board[position], color, position, position + 2, MoveType.CASTLE, castle_side='k')
+                moves.append(move)
+            if 'q' in self.castling_rights and not self.board[57] and not self.board[58] and not self.board[59]:
+                move = Move(self.board[position], color, position, position - 2, MoveType.CASTLE, castle_side='q')
+                moves.append(move)
+
         return moves
+    
+    def make_move(self, move: Move) -> bool:
+        # TODO: If the move is a castling move then it should be handled diff than just move king to capture spot. You should move it and the rook.
+        self.board[move.capture_tile] = self.board[move.start_tile]
+        self.board[move.start_tile] = None
+
+        if move.piece.type == 'pawn':
+            self.num_halfmoves = 0
+            if move.type == MoveType.EN_PASSANT:
+                if move.color == 'white':
+                    self.board[move.capture_tile - 8] = None
+                else:
+                    self.board[move.capture_tile + 8] = None
+            if move.type == MoveType.DOUBLE_PAWN_PUSH:
+                self.en_passant_square = move.capture_tile
+            elif move.type == MoveType.PROMOTION:
+                self.board[move.capture_tile] = move.promoted_to
+                self.num_halfmoves = 0
+
+        # At the end of the move switch colors. Append to history, and add to halftime + fulltime coutners [if color is black]
+        if move.color == 'black':
+            self.num_fullmoves+=1
+
+        self.num_halfmoves+=0.5 if move.piece.type != 'pawn' else 0
+        self.move_history.append(move)
+        self.switch_turn()
+
+        return True
+
     def generate_moves(self, position):
         piece = self.board[position]
         if not piece:
