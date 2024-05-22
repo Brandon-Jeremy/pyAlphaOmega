@@ -52,10 +52,10 @@ class Board:
         return rank * 8 + file
     
     def setup_from_FEN(self, fen: str) -> None:
-        "r4rk1/pb1pnppp/n1p1pq2/1p4B1/1b1P1P2/2PQ3N/PP1NP1PP/2KR1B1R w - - 0 1"
+        "rnb1kbnr/pp2qppp/2p5/4p3/2BP1p2/2N2N2/PPP3PP/R1BQK2R w KQkq - 2 9"
         self.active_color = 'white' if fen.split(' ')[1] == 'w' else 'black'
         self.castling_rights = fen.split(' ')[2]
-        self.en_passant_square = self.algebraic_to_index(fen.split(' ')[3])
+        self.en_passant_square = self.algebraic_to_index(fen.split(' ')[3]) if fen.split(' ')[3] != '-' else '-'
         self.num_halfmoves = int(fen.split(' ')[4])
         self.num_fullmoves = int(fen.split(' ')[5])
         fen = fen.split(' ')[0]
@@ -112,27 +112,34 @@ class Board:
             capture_pos = position + direction + diag
             if 0 <= capture_pos < 64 and abs((capture_pos % 8) - (position % 8)) == 1:
                 if self.board[capture_pos] and self.board[capture_pos].color != color:
-                    capture_move = Move(self.board[position], color, position, capture_pos, MoveType.CAPTURE)
-                    moves.append(capture_move)
+                    if capture_pos // 8 == 0 or capture_pos // 8 == 7:
+                    # Promotion and capture
+                        for i in range(4):
+                            promotion_piece = ['queen', 'rook', 'bishop', 'knight'][i]
+                            promotion_capture_move = Move(self.board[position], color, position, capture_pos, MoveType.PROMOTION_CAPTURE, promotion_piece=Piece(promotion_piece, color),captured_piece=self.board[capture_pos])
+                            moves.append(promotion_capture_move)
+                    else:
+                        capture_move = Move(self.board[position], color, position, capture_pos, MoveType.CAPTURE, captured_piece=self.board[capture_pos])
+                        moves.append(capture_move)
 
         # En Passant
         enpassant_square = self.en_passant_square
         print(enpassant_square, "enpassant_square")
         if(enpassant_square == position + 9 and color=='white'):
             # En passant capture to the right of the pawn by WHITE
-            enpassant_move = Move(self.board[position], color, position, enpassant_square, MoveType.EN_PASSANT)
+            enpassant_move = Move(self.board[position], color, position, enpassant_square, MoveType.EN_PASSANT, captured_piece=Piece('pawn', 'black'))
             moves.append(enpassant_move)
         if(enpassant_square == position + 7 and color=='white'):
             # En passant capture to the left of the pawn by WHITE
-            enpassant_move = Move(self.board[position], color, position, enpassant_square, MoveType.EN_PASSANT)
+            enpassant_move = Move(self.board[position], color, position, enpassant_square, MoveType.EN_PASSANT, captured_piece=Piece('pawn', 'black'))
             moves.append(enpassant_move)
         if(enpassant_square == position - 9 and color=='black'):
             # En passant capture to the right of the pawn by BLACK
-            enpassant_move = Move(self.board[position], color, position, enpassant_square, MoveType.EN_PASSANT)
+            enpassant_move = Move(self.board[position], color, position, enpassant_square, MoveType.EN_PASSANT, captured_piece=Piece('pawn', 'white'))
             moves.append(enpassant_move)
         if(enpassant_square == position - 7 and color=='black'):
             # En passant capture to the left of the pawn by BLACK
-            enpassant_move = Move(self.board[position], color, position, enpassant_square, MoveType.EN_PASSANT)
+            enpassant_move = Move(self.board[position], color, position, enpassant_square, MoveType.EN_PASSANT, captured_piece=Piece('pawn', 'white'))
             moves.append(enpassant_move)
 
         return moves
@@ -151,7 +158,7 @@ class Board:
                     break
                 if self.board[current_pos]:
                     if self.board[current_pos].color != color:
-                        move = Move(self.board[position], color, position, current_pos, MoveType.CAPTURE)
+                        move = Move(self.board[position], color, position, current_pos, MoveType.CAPTURE, captured_piece=self.board[current_pos])
                         moves.append(move)
                     break
                 move = Move(self.board[position], color, position, current_pos, MoveType.NORMAL)
@@ -170,7 +177,7 @@ class Board:
             if self.board[current_pos] and self.board[current_pos].color == color:
                 continue
             if self.board[current_pos] and self.board[current_pos].color != color:
-                move = Move(self.board[position], color, position, current_pos, MoveType.CAPTURE)
+                move = Move(self.board[position], color, position, current_pos, MoveType.CAPTURE, captured_piece=self.board[current_pos])
                 moves.append(move)
             else:
                 move = Move(self.board[position], color, position, current_pos, MoveType.NORMAL)
@@ -191,7 +198,7 @@ class Board:
                     break
                 if self.board[current_pos]:
                     if self.board[current_pos].color != color:
-                        move = Move(self.board[position], color, position, current_pos, MoveType.CAPTURE)
+                        move = Move(self.board[position], color, position, current_pos, MoveType.CAPTURE, captured_piece=self.board[current_pos])
                         moves.append(move)
                     break
                 move = Move(self.board[position], color, position, current_pos, MoveType.NORMAL)
@@ -212,7 +219,7 @@ class Board:
                     break
                 if self.board[current_pos]:
                     if self.board[current_pos].color != color:
-                        move = Move(self.board[position], color, position, current_pos, MoveType.CAPTURE)
+                        move = Move(self.board[position], color, position, current_pos, MoveType.CAPTURE, captured_piece=self.board[current_pos])
                         moves.append(move)
                     break
                 move = Move(self.board[position], color, position, current_pos, MoveType.NORMAL)
@@ -232,7 +239,7 @@ class Board:
             if self.board[current_pos] and self.board[current_pos].color == color:
                 continue
             if self.board[current_pos] and self.board[current_pos].color != color:
-                move = Move(self.board[position], color, position, current_pos, MoveType.CAPTURE)
+                move = Move(self.board[position], color, position, current_pos, MoveType.CAPTURE, captured_piece=self.board[current_pos])
                 moves.append(move)
             else:
                 move = Move(self.board[position], color, position, current_pos, MoveType.NORMAL)
@@ -258,8 +265,9 @@ class Board:
         return moves
     
     def make_move(self, move: Move) -> bool:
-        if move.piece == 'king':
+        if move.piece.type == 'king':
             if move.type == MoveType.CASTLE:
+                print("Castling move")
                 if move.color == 'white':
                     if move.castle_side == 'K':
                         self.board[5] = self.board[7]
@@ -300,6 +308,50 @@ class Board:
         self.switch_turn()
 
         return True
+    
+    def undo_move(self) -> bool: 
+        if not self.move_history:
+            return False
+
+        move = self.move_history.pop()
+        self.board[move.start_tile] = move.piece
+        self.board[move.capture_tile] = move.captured_piece
+
+        if move.type == MoveType.EN_PASSANT:
+            if move.color == 'white':
+                self.board[move.capture_tile - 8] = Piece('pawn', 'black')
+            else:
+                self.board[move.capture_tile + 8] = Piece('pawn', 'white')
+
+        if move.type == MoveType.PROMOTION:
+            self.board[move.start_tile] = Piece('pawn', move.color)
+
+        # Castling also needs to be undone where king moves back to original spot
+        if move.type == MoveType.CASTLE:
+            if move.castle_side == 'K':
+                self.board[4] = Piece('king', move.color)
+                self.board[7] = Piece('rook', move.color)
+
+                self.board[5] = self.board[6] = None
+            elif move.castle_side == 'Q':
+                self.board[4] = Piece('king', move.color)
+                self.board[0] = Piece('rook', move.color)
+
+                self.board[1] = self.board[2] = self.board[3] = None
+            elif move.castle_side == 'k':
+                self.board[60] = Piece('king', move.color)
+                self.board[63] = Piece('rook', move.color)
+
+                self.board[61] = self.board[62] = None
+            elif move.castle_side == 'q':
+                self.board[60] = Piece('king', move.color)
+                self.board[56] = Piece('rook', move.color)
+
+                self.board[57] = self.board[58] = self.board[59] = None
+
+        self.switch_turn()
+
+        return True
 
     def generate_moves(self, position):
         piece = self.board[position]
@@ -332,7 +384,12 @@ class Board:
             return self.generate_king_moves(position, piece.color)
 
 board = Board()
-board.setup_from_FEN("r4rk1/pb1pnpp1/n3pq2/RppP2Bp/1b3P2/2PQ3N/PPN1P1PP/2K2B1R w Kq c6 0 1")
+board.setup_from_FEN("rnbqk2r/pppp1ppp/5n2/2b1p3/2B1P3/5N2/PPPP1PPP/RNBQ1RK1 b kq - 5 4")
 board.print_board()
-moves = board.generate_moves(38)
+moves = board.generate_moves(60)
 print(moves)
+print(board.make_move(moves[-1]))
+board.print_board()
+
+print(board.undo_move())
+board.print_board()
