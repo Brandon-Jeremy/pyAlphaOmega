@@ -258,7 +258,23 @@ class Board:
         return moves
     
     def make_move(self, move: Move) -> bool:
-        # TODO: If the move is a castling move then it should be handled diff than just move king to capture spot. You should move it and the rook.
+        if move.piece == 'king':
+            if move.type == MoveType.CASTLE:
+                if move.color == 'white':
+                    if move.castle_side == 'K':
+                        self.board[5] = self.board[7]
+                        self.board[7] = None
+                    else:
+                        self.board[3] = self.board[0]
+                        self.board[0] = None
+                else:
+                    if move.castle_side == 'k':
+                        self.board[61] = self.board[63]
+                        self.board[63] = None
+                    else:
+                        self.board[59] = self.board[56]
+                        self.board[56] = None
+
         self.board[move.capture_tile] = self.board[move.start_tile]
         self.board[move.start_tile] = None
 
